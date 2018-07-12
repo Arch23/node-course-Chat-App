@@ -1,5 +1,24 @@
 const socket = io();
 
+const scrollToBottom = () => {
+    // selectors
+    const messages = jQuery('#messages');
+    const newMessage = messages.children('li:last-child');
+    // Heights
+    const clientHeight = messages.prop('clientHeight');
+    const scrollTop = messages.prop('scrollTop');
+    const scrollHeight = messages.prop('scrollHeight');
+    const newMessageHeight = newMessage.innerHeight();
+    const lastMessageHeight = newMessage.prev().innerHeight();
+
+    if (clientHeight
+        + scrollTop
+        + newMessageHeight
+        + lastMessageHeight >= scrollHeight) {
+        messages.scrollTop(scrollHeight);
+    }
+};
+
 socket.on('connect', () => {
     console.log('Connected to server');
 });
@@ -18,6 +37,7 @@ socket.on('newMessage', (message) => {
     });
 
     jQuery('#messages').append(html);
+    scrollToBottom();
 });
 
 socket.on('newLocationMessage', (message) => {
@@ -30,16 +50,10 @@ socket.on('newLocationMessage', (message) => {
     });
 
     jQuery('#messages').append(html);
-    // const li = jQuery('<li></li>');
-    // const a = jQuery('<a target="_blank">My Current location</a>');
-    // li.text(`${message.from} ${formattedTime}: `);
-    // a.attr('href', message.url);
-    // li.append(a);
-
-    // jQuery('#messages').append(li);
+    scrollToBottom();
 });
 
-jQuery('#message-form').on('submit', (event)=>{
+jQuery('#message-form').on('submit', (event) => {
     event.preventDefault();
 
     const messageTexbox = jQuery('[name=message]');
@@ -47,7 +61,7 @@ jQuery('#message-form').on('submit', (event)=>{
     socket.emit('createMessage', {
         from: 'User',
         text: messageTexbox.val(),
-    }, ()=>{
+    }, () => {
         messageTexbox.val('');
     });
 });
@@ -61,16 +75,16 @@ locationButton.on('click', () => {
 
     locationButton.attr('disabled', 'disabled').text('Sending location...');
 
-    navigator.geolocation.getCurrentPosition((position)=>{
+    navigator.geolocation.getCurrentPosition((position) => {
         locationButton.removeAttr('disabled').text('Send location');
         socket.emit('createLocationMessage', {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
         });
-    }, ()=>{
+    }, () => {
         locationButton.removeAttr('disabled').text('Send location');
         alert('Unable to fetch location.');
     }, {
-        enableHighAccuracy: true,
-    });
+            enableHighAccuracy: true,
+        });
 });
