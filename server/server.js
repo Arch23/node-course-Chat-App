@@ -31,9 +31,13 @@ io.on('connection', (socket) => {
     });
 
     socket.on('join', (params, callback) => {
+        params.room = params.room.toLowerCase();
         if (!isRealString(params.name) || !isRealString(params.room)) {
             return callback('Name and room name are required.');
+        } else if (users.getUserList(params.room).find((user)=>user===params.name)) {
+            return callback(`User with name ${params.name} already exists in this room.`);
         }
+
         socket.join(params.room);
         users.removeUser(socket.id);
         users.addUser(socket.id, params.name, params.room);
